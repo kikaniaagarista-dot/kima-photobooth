@@ -302,6 +302,7 @@ function takeSnapshot() {
   statusText.textContent = '✅ Foto berhasil diambil! 📸';
 }
 
+
 // ===== COLLAGE FUNCTIONS =====
 function startCollage() {
   if (isProcessing) return;
@@ -318,10 +319,11 @@ function startCollage() {
   const photos = [];
   const timerValue = parseInt(timerSelect.value) || 3;
   const totalPhotos = getPhotoCountForLayout(layout);
-  let current = 0;
+  let photoIndex = 0;  // Gunakan nama yang lebih jelas
 
   function takeNext() {
-    if (current >= totalPhotos) {
+    // ✅ SAFETY CHECK: Berhenti jika sudah cukup atau dibatalkan
+    if (photoIndex >= totalPhotos || !isProcessing) {
       buildCollage(photos, layout);
       isProcessing = false;
       updateButtons(false);
@@ -331,51 +333,66 @@ function startCollage() {
     }
 
     startCountdown(timerValue, () => {
+      // ✅ Double-check: Jangan lanjut jika sudah dibatalkan
+      if (!isProcessing) return;
+      
       playSound('shutter');
       flashEl.classList.remove('active');
       void flashEl.offsetWidth;
       flashEl.classList.add('active');
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        
-        if (currentBackgroundColor !== 'transparent') {
-          ctx.fillStyle = currentBackgroundColor;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        
-        // VIDEO SAJA yang di-mirror
-        ctx.save();
-        if (isMirrored) {
-          ctx.translate(canvas.width, 0);
-          ctx.scale(-1, 1);
-        }
-        const filter = filterSelect.value;
-        ctx.filter = filter === 'none' ? 'none' : filter;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        ctx.restore(); // Frame tidak ikut mirror
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      
+      if (currentBackgroundColor !== 'transparent') {
+        ctx.fillStyle = currentBackgroundColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      
+      // Mirror hanya untuk video
+      ctx.save();
+      if (isMirrored) {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+      const filter = filterSelect.value;
+      ctx.filter = filter === 'none' ? 'none' : filter;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
 
-        ctx.filter = 'none';
-        stickers.forEach(sticker => {
-          ctx.font = `${sticker.size}px Arial`;
-          ctx.fillText(sticker.emoji, sticker.x, sticker.y);
-        });
-        
-        if (currentFrame) {
-          ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
-        }
-        
-        photos.push(canvas.toDataURL('image/png'));
+      // Sticker & Frame (tidak ikut mirror)
+      ctx.filter = 'none';
+      stickers.forEach(sticker => {
+        ctx.font = `${sticker.size}px Arial`;
+        ctx.fillText(sticker.emoji, sticker.x, sticker.y);
+      });
+      
+      if (currentFrame) {
+        ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
+      }
+      
+      photos.push(canvas.toDataURL('image/png'));
+      photoIndex++;  // Increment SETELAH foto diambil
 
-      const progress = (current / totalPhotos) * 100;
+      const progress = (photoIndex / totalPhotos) * 100;
       progressBar.style.width = progress + '%';
-      statusText.textContent = `📸 Foto ${current}/${totalPhotos} selesai!`;
+      statusText.textContent = `📸 Foto ${photoIndex}/${totalPhotos} selesai!`;
 
-      setTimeout(takeNext, 800);
+      // ✅ Hanya lanjut jika belum mencapai batas
+      if (photoIndex < totalPhotos && isProcessing) {
+        setTimeout(takeNext, 800);
+      } else {
+        // ✅ Langsung build collage jika sudah selesai
+        buildCollage(photos, layout);
+        isProcessing = false;
+        updateButtons(false);
+        playSound('success');
+        statusText.textContent = `✅ Kolase ${totalPhotos} foto selesai! 🎞️`;
+      }
     });
   }
-  takeNext();
+  takeNext();  // Start the loop
 }
 
 function getPhotoCountForLayout(layout) {
@@ -385,74 +402,80 @@ function getPhotoCountForLayout(layout) {
 
 function buildCollage(photos, layout) {
   const configs = {
-    '1': { cols: 1, rows: 1, w: 800, h: 600 },
-    '2': { cols: 1, rows: 2, w: 400, h: 1200 },
-    '4': { cols: 1, rows: 4, w: 400, h: 1600 },
-    '2x2': { cols: 2, rows: 2, w: 800, h: 800 },
-    '2x3': { cols: 2, rows: 3, w: 800, h: 1200 },
-    '3x2': { cols: 3, rows: 2, w: 1200, h: 800 }
+    '1': { cols: 1, rows: 1, w: 600, h: 600, photoW: 540, photoH: 540 },
+    '2': { cols: 1, rows: 2, w: 400, h: 800, photoW: 340, photoH: 340 },
+    '4': { cols: 1, rows: 4, w: 400, h: 1200, photoW: 340, photoH: 240 },
+    '2x2': { cols: 2, rows: 2, w: 600, h: 600, photoW: 270, photoH: 270 },
+    '2x3': { cols: 2, rows: 3, w: 600, h: 900, photoW: 270, photoH: 240 },
+    '3x2': { cols: 3, rows: 2, w: 900, h: 600, photoW: 270, photoH: 240 }
   };
 
   const config = configs[layout] || configs['2x3'];
-  const { cols, rows, w, h } = config;
-  const cellW = w / cols;
-  const cellH = h / rows;
-  const gap = 10;
+  const { cols, rows, w, h, photoW, photoH } = config;
+  const gap = 20;
   const padding = 30;
 
   const c = document.createElement('canvas');
-  c.width = w + padding * 2;
-  c.height = h + padding * 2 + 80;
+  c.width = w;
+  c.height = h;
   const cx = c.getContext('2d');
 
-  // Background
-  cx.fillStyle = currentBackgroundColor === 'transparent' ? '#1a0a0e' : currentBackgroundColor;
+  // Background - putih atau sesuai pilihan
+  cx.fillStyle = currentBackgroundColor === 'transparent' ? '#ffffff' : currentBackgroundColor;
   cx.fillRect(0, 0, c.width, c.height);
 
-  // Border
+  // Border luar
   cx.strokeStyle = '#d4a843';
-  cx.lineWidth = 4;
-  cx.strokeRect(8, 8, c.width - 16, c.height - 16);
+  cx.lineWidth = 3;
+  cx.strokeRect(2, 2, c.width - 4, c.height - 4);
 
-  // Title
-  cx.fillStyle = '#d4a843';
-  cx.font = 'bold 32px Pacifico, cursive';
-  cx.textAlign = 'center';
-  cx.fillText('Photo Booth', c.width / 2, padding + 40);
+  // Hitung posisi awal untuk centering
+  const totalWidth = cols * photoW + (cols - 1) * gap;
+  const totalHeight = rows * photoH + (rows - 1) * gap;
+  const startX = (w - totalWidth) / 2;
+  const startY = (h - totalHeight) / 2;
 
-  // Date
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-  const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-  cx.fillStyle = '#a0334d';
-  cx.font = '16px Poppins, sans-serif';
-  cx.fillText(`${dateStr} • ${timeStr}`, c.width / 2, padding + 65);
-
-  // Draw photos
-  let idx = 0;
-  for (let r = 0; r < rows; r++) {
+  // Draw photos ke dalam grid
+  let photoIdx = 0;
+  for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      if (idx >= photos.length) break;
+      if (photoIdx >= photos.length) break;
+
       const img = new Image();
-      img.src = photos[idx];
-      const x = padding + col * cellW + gap/2;
-      const y = padding + 80 + r * cellH + gap/2;
-      const cellWidth = cellW - gap;
-      const cellHeight = cellH - gap;
-      // White border
-      cx.fillStyle = '#ffffff';
-      cx.fillRect(x - 4, y - 4, cellWidth + 8, cellHeight + 8);
-      // Draw photo
-      cx.drawImage(img, x, y, cellWidth, cellHeight);
-      idx++;
+      img.src = photos[photoIdx];
+      
+      img.onload = () => {
+        const x = startX + col * (photoW + gap);
+        const y = startY + row * (photoH + gap);
+
+        // Border putih untuk setiap foto
+        cx.fillStyle = '#ffffff';
+        cx.fillRect(x - 3, y - 3, photoW + 6, photoH + 6);
+        cx.strokeStyle = '#d4a843';
+        cx.lineWidth = 1;
+        cx.strokeRect(x - 3, y - 3, photoW + 6, photoH + 6);
+
+        // Draw foto dengan object-fit: cover
+        const scale = Math.max(photoW / img.width, photoH / img.height);
+        const newW = img.width * scale;
+        const newH = img.height * scale;
+        const offsetX = (photoW - newW) / 2;
+        const offsetY = (photoH - newH) / 2;
+        
+        cx.drawImage(img, x + offsetX, y + offsetY, newW, newH);
+
+        // Setelah semua foto selesai digambar
+        photoIdx++;
+        if (photoIdx >= photos.length) {
+          // Tambahkan header/footer jika perlu
+          const dataUrl = c.toDataURL('image/png', 0.9);
+          addPhotoToGallery(dataUrl, true);
+          progressBar.style.width = '0%';
+        }
+      };
     }
   }
-
-  const dataUrl = c.toDataURL('image/png');
-  addPhotoToGallery(dataUrl, true);
-  progressBar.style.width = '0%';
 }
-
 // ===== COUNTDOWN =====
 function startCountdown(seconds, callback) {
   countdownEl.style.display = 'flex';
