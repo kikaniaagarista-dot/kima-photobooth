@@ -10,14 +10,289 @@
   
   <!-- Custom CSS -->
   <link rel="stylesheet" href="css/style.css">
+    <style>
+    /* ===== SLIDE SYSTEM ===== */
+    .slides-container {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      min-height: 80vh;
+    }
 
-    <!-- Audio Elements -->
-  <audio id="bgMusic" loop preload="auto">
-    <source src="assets/music/background.mp3" type="audio/mpeg">
-  </audio>
-  <audio id="sfxShutter" preload="auto">
-    <source src="assets/sounds/shutter.mp3" type="audio/mpeg">
-  </audio>
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(50px);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+      pointer-events: auto;
+      z-index: 10;
+    }
+
+    .slide.exit-left {
+      transform: translateX(-50px);
+      opacity: 0;
+    }
+
+    /* Slide Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 10px 0;
+      border-bottom: 2px solid rgba(212, 168, 67, 0.3);
+    }
+
+    .slide-header h2 {
+      font-family: 'Pacifico', cursive;
+      color: var(--gold);
+      font-size: 1.8rem;
+      margin: 0;
+    }
+
+    .slide-timer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0,0,0,0.3);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      color: var(--gold);
+    }
+
+    .timer-icon { font-size: 1.2rem; }
+
+    /* Preview Box */
+    .preview-section {
+      margin-bottom: 20px;
+    }
+
+    .preview-box {
+      width: 100%;
+      min-height: 400px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      border: 2px dashed rgba(212, 168, 67, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.6);
+      overflow: hidden;
+    }
+
+    .preview-box img, .preview-box canvas {
+      max-width: 100%;
+      max-height: 600px;
+      object-fit: contain;
+    }
+
+    /* Slide Footer */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      gap: 10px;
+    }
+
+    .btn-prev, .btn-next, .btn-reset {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .btn-prev {
+      background: rgba(255,255,255,0.1);
+      color: var(--white);
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+    .btn-prev:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateX(-3px);
+    }
+
+    .btn-next {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--maroon-dark);
+    }
+    .btn-next:hover {
+      transform: translateX(3px);
+      box-shadow: 0 6px 20px rgba(212, 168, 67, 0.5);
+    }
+
+    .btn-reset {
+      background: linear-gradient(135deg, #ff4d4d, #800020);
+      color: white;
+    }
+    .btn-reset:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 77, 77, 0.5);
+    }
+
+    /* Timer Warning */
+    .timer-warning {
+      color: #ff6b6b !important;
+      animation: pulseWarning 1s infinite;
+    }
+
+    @keyframes pulseWarning {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    /* Review Overlay */
+    .review-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .review-container {
+      background: linear-gradient(145deg, rgba(128, 0, 32, 0.9), rgba(90, 0, 22, 0.95));
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      border: 3px solid var(--gold);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .review-title {
+      font-family: 'Pacifico', cursive;
+      color: var(--gold);
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    .review-image-wrap {
+      width: 100%;
+      aspect-ratio: 4/3;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid var(--gold);
+      margin-bottom: 20px;
+      background: #000;
+    }
+
+    .review-image-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .review-timer {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    .timer-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light));
+      width: 100%;
+      transform-origin: left;
+      animation: shrinkBar 10s linear;
+    }
+
+    @keyframes shrinkBar {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0); }
+    }
+
+    .review-text {
+      color: var(--white);
+      font-size: 1rem;
+      margin-bottom: 20px;
+    }
+
+    .review-text #countdownSec {
+      color: var(--gold);
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .review-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .btn-review {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .btn-review.retake {
+      background: linear-gradient(135deg, #ff4d4d, #800020);
+      color: white;
+    }
+    .btn-review.retake:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 77, 77, 0.5);
+    }
+
+    .btn-review.continue {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--maroon-dark);
+    }
+    .btn-review.continue:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(212, 168, 67, 0.5);
+    }
+
+    /* Responsive */
+    @media (max-width: 650px) {
+      .slide-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+      .slide-footer {
+        flex-direction: column;
+      }
+      .btn-prev, .btn-next, .btn-reset {
+        width: 100%;
+      }
+      .review-buttons {
+        flex-direction: column;
+      }
+      .btn-review {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -31,53 +306,39 @@
   <!-- Fullscreen Button -->
   <button class="fullscreen-btn" id="fullscreenBtn" title="Fullscreen">⛶</button>
 
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1 class="header-title">Kima Photo Booth</h1>
-      <p class="header-subtitle">✨ Tangkap Momen Berhargamu ✨</p>
-      <div class="header-divider">
-        <div class="line"></div>
-        <span>✦</span>
-        <div class="line"></div>
-      </div>
-    </div>
+  <div class="slides-container">
 
-    <!-- Main Card -->
-    <div class="booth-card">
-      <!-- Video Section -->
-      <div class="video-section">
-        <video id="video" autoplay playsinline muted></video>
-        <canvas id="canvas"></canvas>
-        <div id="countdown" class="countdown-overlay">
-          <div class="countdown-number" id="countdownNumber">3</div>
-          <div class="countdown-text">Bersiap ya... 📸</div>
+    
+    <!-- ===== SLIDE 1: CAPTURE ===== -->
+    <section id="slide1" class="slide active">
+      <div class="slide-header">
+        <h2>📸 Ambil Foto</h2>
+        <div class="slide-timer">
+          <span class="timer-icon">⏱️</span>
+          <span id="timer1">07:00</span>
         </div>
-        <div id="flash" class="flash"></div>
-        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
       </div>
-
-      <!-- Controls -->
-      <div class="controls-section">
-        <!-- Tabs -->
-        <div class="control-tabs">
-          <button class="tab-btn active" data-tab="layout">📐 Layout</button>
-          <button class="tab-btn" data-tab="filter">🎨 Filter</button>
-          <button class="tab-btn" data-tab="background">🌈 Background</button>
-          <button class="tab-btn" data-tab="frame">🖼️ Frame</button> 
-          <button class="tab-btn" data-tab="sticker">🎭 Sticker</button>
-          <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+      
+      <div class="booth-card">
+        <div class="video-section">
+          <video id="video" autoplay playsinline muted></video>
+          <canvas id="canvas"></canvas>
+          <div id="countdown" class="countdown-overlay">
+            <div class="countdown-number" id="countdownNumber">3</div>
+            <div class="countdown-text">Bersiap ya... 📸</div>
+          </div>
+          <div id="flash" class="flash"></div>
+          <div class="progress-bar" id="progressBar" style="width: 0%"></div>
         </div>
 
-        <!-- Layout Panel -->
-        <div id="layout" class="control-panel active">
+        <div class="controls-section">
           <div class="control-row">
             <div class="control-group">
               <label>📐 Layout</label>
               <select id="layoutSelect">
-                <option value="1">1 Foto (Full)</option>
-                <option value="2">2 Foto (Strip)</option>
-                <option value="4">4 Foto (Strip)</option>
+                <option value="1">1 Foto</option>
+                <option value="2">2 Foto Strip</option>
+                <option value="4">4 Foto Strip</option>
                 <option value="2x2">2×2 Grid</option>
                 <option value="2x3" selected>2×3 Grid</option>
                 <option value="3x2">3×2 Grid</option>
@@ -86,157 +347,137 @@
             <div class="control-group">
               <label>⏱ Timer</label>
               <select id="timer">
-                <option value="0">⚡ Langsung</option>
+                <option value="0">Langsung</option>
                 <option value="3" selected>3 Detik</option>
                 <option value="5">5 Detik</option>
-                <option value="10">10 Detik</option>
               </select>
             </div>
           </div>
+          
+          <div class="control-row">
+            <button id="mirrorBtn" class="btn btn-secondary">🪞 Mirror</button>
+          </div>
+          
           <div class="control-row">
             <button id="captureBtn" class="btn btn-capture">📷 Jepret!</button>
-            <button id="collageBtn" class="btn btn-collage">🎞️ Kolase Otomatis</button>
+            <button id="collageBtn" class="btn btn-collage">🎞️ Kolase</button>
+          </div>
+        </div>
+        <p class="status-text" id="statusText">Siap! Pilih layout & jepret ✨</p>
+      </div>
+      
+      <div class="slide-footer">
+        <button class="btn-next" onclick="goToSlide(2)">Lanjut Edit →</button>
+      </div>
+    </section>
+
+    <!-- ===== SLIDE 2: EDIT ===== -->
+    <section id="slide2" class="slide">
+      <div class="slide-header">
+        <h2>🎨 Edit Foto</h2>
+        <div class="slide-timer">
+          <span class="timer-icon">⏱️</span>
+          <span id="timer2">07:00</span>
+        </div>
+      </div>
+      
+      <div class="booth-card">
+        <div class="preview-section">
+          <div id="editPreview" class="preview-box">
+            <p style="color:var(--gold);">📸 Foto akan muncul di sini setelah dijepret</p>
           </div>
         </div>
 
-        <!-- Filter Panel -->
-        <div id="filter" class="control-panel">
+        <div class="controls-section">
+          <!-- FRAME UPLOAD (Dipindah ke sini) -->
+          <div class="control-row">
+            <label class="btn btn-primary" style="cursor:pointer;">🖼️ Upload Frame
+              <input type="file" id="frameUpload" accept="image/png" style="display:none">
+            </label>
+            <button id="removeFrameBtn" class="btn btn-danger">🗑️ Hapus Frame</button>
+          </div>
+
+          <!-- Filter -->
           <div class="control-row">
             <div class="control-group">
               <label>🎨 Filter</label>
-              <select id="filterSelect">
+              <select id="filterSelect" onchange="applyPreviewFilter()">
                 <option value="none">✨ Normal</option>
                 <option value="grayscale(100%)">⬛ Grayscale</option>
                 <option value="sepia(100%)">🟤 Sepia</option>
-                <option value="saturate(200%)">🌈 Saturate</option>
-                <option value="hue-rotate(90deg)">💚 Hue Green</option>
-                <option value="hue-rotate(180deg)">💙 Hue Blue</option>
-                <option value="hue-rotate(270deg)">💜 Hue Purple</option>
+                <option value="saturate(200%)">🌈 Vivid</option>
                 <option value="brightness(130%)">☀️ Bright</option>
-                <option value="brightness(70%)">🌑 Dark</option>
-                <option value="contrast(150%)">🔆 High Contrast</option>
-                <option value="contrast(50%)">🔅 Low Contrast</option>
+                <option value="contrast(150%)"> Contrast</option>
                 <option value="blur(2px)">🌫️ Blur</option>
-                <option value="invert(100%)">🔄 Invert</option>
-                <option value="grayscale(100%) contrast(120%) brightness(110%)">🎬 Vintage</option>
-                <option value="saturate(0%) brightness(120%) contrast(90%)">☁️ Soft</option>
-                <option value="sepia(30%) saturate(140%) brightness(110%) contrast(110%)">🍂 Warm</option>
                 <option value="hue-rotate(340deg) saturate(150%) brightness(110%)">🌸 Pink Dream</option>
               </select>
             </div>
           </div>
-        </div>
 
-        <!-- Background Panel -->
-        <div id="background" class="control-panel">
+          <!-- Stickers -->
           <div class="control-row">
-            <div class="control-group">
-              <label> Background</label>
-              <div class="color-picker-wrapper" id="bgColorPicker">
-                <div class="color-option active" data-color="transparent" style="background: linear-gradient(45deg, #000 25%, transparent 25%), linear-gradient(-45deg, #000 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #000 75%), linear-gradient(-45deg, transparent 75%, #000 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;"></div>
-                <div class="color-option" data-color="#800020" style="background: #800020;"></div>
-                <div class="color-option" data-color="#ff0000" style="background: #ff0000;"></div>
-                <div class="color-option" data-color="#0000ff" style="background: #0000ff;"></div>
-                <div class="color-option" data-color="#00ff00" style="background: #00ff00;"></div>
-                <div class="color-option" data-color="#ffd700" style="background: #ffd700;"></div>
-                <div class="color-option" data-color="#ff69b4" style="background: #ff69b4;"></div>
-                <div class="color-option" data-color="#000000" style="background: #000000;"></div>
-                <div class="color-option" data-color="#ffffff" style="background: #ffffff;"></div>
-                <div class="color-option" data-color="#ff6b6b" style="background: #ff6b6b;"></div>
-                <div class="color-option" data-color="#4ecdc4" style="background: #4ecdc4;"></div>
-                <div class="color-option" data-color="#ffe66d" style="background: #ffe66d;"></div>
+            <div class="control-group" style="width:100%">
+              <label>🎭 Sticker</label>
+              <div class="stickers-grid">
+                <div class="sticker-item" onclick="addStickerToPreview('❤️')">❤️</div>
+                <div class="sticker-item" onclick="addStickerToPreview('💖')">💖</div>
+                <div class="sticker-item" onclick="addStickerToPreview('⭐')">⭐</div>
+                <div class="sticker-item" onclick="addStickerToPreview('✨')">✨</div>
+                <div class="sticker-item" onclick="addStickerToPreview('🎀')"></div>
+                <div class="sticker-item" onclick="addStickerToPreview('🌸')"></div>
+                <div class="sticker-item" onclick="addStickerToPreview('😊')">😊</div>
+                <div class="sticker-item" onclick="addStickerToPreview('😍')">😍</div>
+                <div class="sticker-item" onclick="addStickerToPreview('👑')">👑</div>
+                <div class="sticker-item" onclick="addStickerToPreview('🔥')"></div>
               </div>
+              <button class="btn btn-danger" style="margin-top:8px" onclick="clearPreviewStickers()">🗑️ Hapus Sticker</button>
             </div>
           </div>
         </div>
+      </div>
+      
+      <div class="slide-footer">
+        <button class="btn-prev" onclick="goToSlide(1)">← Kembali</button>
+        <button class="btn-next" onclick="goToSlide(3)">Lanjut Export →</button>
+      </div>
+    </section>
 
-        <!-- Frame Panel -->
-        <div id="frame" class="control-panel">
+    <!-- ===== SLIDE 3: EXPORT ===== -->
+    <section id="slide3" class="slide">
+      <div class="slide-header">
+        <h2>💾 Simpan Hasil</h2>
+        <div class="slide-timer">
+          <span class="timer-icon">⏱️</span>
+          <span id="timer3">03:00</span>
+        </div>
+      </div>
+      
+      <div class="booth-card">
+        <!-- Final Preview -->
+        <div class="preview-section">
+          <div id="finalPreview" class="preview-box">
+            <p style="color:var(--gold);">🎁 Hasil akhir akan muncul di sini</p>
+          </div>
+        </div>
+
+        <!-- Export Options -->
+        <div class="controls-section">
           <div class="control-row">
-            <div class="control-group" style="width: 100%;">
-              <label>🖼️ Upload Frame PNG</label>
-              <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px;">
-                <label class="btn btn-primary" style="cursor: pointer;">
-                  📤 Upload Frame
-                  <input type="file" id="frameUpload" accept="image/png" style="display: none;">
-                </label>
-                <button id="removeFrameBtn" class="btn btn-danger">🗑️ Hapus Frame</button>
-              </div>
-              <p style="text-align: center; color: var(--gold); font-size: 0.75rem; margin-top: 8px;">
-                ✨ Gunakan PNG transparan dari Canva<br>
-                Frame akan otomatis menempel di hasil foto
-              </p>
-            </div>
+            <button class="btn btn-primary" onclick="downloadFinal()">💾 Download PNG</button>
+            <button class="btn btn-primary" onclick="printFinal()">🖨️ Print</button>
           </div>
-          <div id="framePreview" style="display: none; text-align: center; margin-top: 10px;">
-            <p style="color: var(--gold); font-size: 0.85rem; margin-bottom: 8px;">✅ Frame aktif!</p>
-            <img id="framePreviewImg" src="" alt="Frame Preview" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 2px solid var(--gold);">
-          </div>
-        </div>
-
-        <!-- Sticker Panel -->
-        <div id="sticker" class="control-panel">
-          <div class="control-row">
-            <div class="control-group" style="width: 100%;">
-              <label>🎭 Pilih Sticker (Klik untuk tambah)</label>
-              <div class="stickers-grid" id="stickersGrid">
-                <div class="sticker-item">❤️</div><div class="sticker-item">💖</div><div class="sticker-item">💕</div>
-                <div class="sticker-item">💗</div><div class="sticker-item">💝</div><div class="sticker-item">💘</div>
-                <div class="sticker-item">⭐</div><div class="sticker-item">🌟</div><div class="sticker-item">✨</div>
-                <div class="sticker-item">💫</div><div class="sticker-item">🎀</div><div class="sticker-item">🎈</div>
-                <div class="sticker-item">🎉</div><div class="sticker-item">🎊</div><div class="sticker-item">🌸</div>
-                <div class="sticker-item">🌺</div><div class="sticker-item">🌻</div><div class="sticker-item">🌹</div>
-                <div class="sticker-item">😊</div><div class="sticker-item">😍</div><div class="sticker-item">🥰</div>
-                <div class="sticker-item">😎</div><div class="sticker-item">🤩</div><div class="sticker-item">😘</div>
-                <div class="sticker-item">👑</div><div class="sticker-item">💎</div><div class="sticker-item">🔥</div>
-                <div class="sticker-item">🦋</div><div class="sticker-item">🌈</div><div class="sticker-item">🎵</div>
-              </div>
-            </div>
-          </div>
-          <div class="control-row">
-            <button id="clearStickersBtn" class="btn btn-danger">🗑️ Hapus Semua Sticker</button>
-          </div>
-        </div>
-
-      <!-- Settings Panel -->
-      <div id="settings" class="control-panel">
-        <div class="control-row">
-          <button id="mirrorBtn" class="btn btn-secondary">🪞 Mirror</button>
-          <button id="musicBtn" class="btn btn-secondary">🔇 Musik: OFF</button>
-          <button id="soundToggle" class="btn btn-secondary">🔊 SFX: ON</button>
-          <button id="printBtn" class="btn btn-primary">🖨️ Print</button>
-          <button id="clearBtn" class="btn btn-danger">🗑️ Hapus Semua</button>
+          <p class="status-text" id="exportStatus">Klik tombol untuk menyimpan hasil ✨</p>
         </div>
       </div>
+      
+      <div class="slide-footer">
+        <button class="btn-prev" onclick="goToSlide(2)">← Kembali Edit</button>
+        <button class="btn-reset" onclick="resetToStart()">🔄 Mulai Lagi</button>
+      </div>
+    </section>
 
-      <!-- Status -->
-      <div class="status-bar">
-        <p class="status-text" id="statusText">Siap! Pilih layout dan jepret ✨</p>
-      </div>
-      <div class="error-msg" id="errorMsg"></div>
-    </div>
-
-    <!-- Gallery -->
-    <div class="gallery-section">
-      <div class="gallery-header">
-        <h2 class="gallery-title">📸 Hasil Foto</h2>
-        <span class="gallery-count" id="galleryCount">0 foto</span>
-      </div>
-      <div class="gallery" id="gallery">
-        <div class="empty-gallery" id="emptyGallery">
-          <div class="icon">📷</div>
-          <p>Belum ada foto. Mulai jepret sekarang!</p>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <!-- Print Area -->
-  <div id="printArea"></div>
-
-  <!-- Custom JS -->
-  <script src="js/main.js"></script>
-  
     <!-- Audio Elements -->
   <audio id="bgMusic" loop preload="auto">
     <source src="assets/music/background.mp3" type="audio/mpeg">
@@ -245,7 +486,7 @@
   <audio id="sfxShutter" preload="auto">
     <source src="assets/music/shutter.mp3" type="audio/mpeg">
   </audio>
-  
+
     <!-- Review Overlay -->
   <div id="reviewOverlay" class="review-overlay" style="display: none;">
     <div class="review-container">
@@ -263,5 +504,35 @@
       </div>
     </div>
   </div>
+    <!-- Audio Elements (HANYA 1x di sini) -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="assets/music/background.mp3" type="audio/mpeg">
+  </audio>
+  
+  <audio id="sfxShutter" preload="auto">
+    <source src="assets/music/shutter.mp3" type="audio/mpeg">
+  </audio>
+
+  <!-- Review Overlay -->
+  <div id="reviewOverlay" class="review-overlay" style="display: none;">
+    <div class="review-container">
+      <h2 class="review-title">Review Foto</h2>
+      <div class="review-image-wrap">
+        <img id="reviewImage" src="" alt="Review">
+      </div>
+      <div class="review-timer">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+      <p class="review-text">Otomatis lanjut dalam <span id="countdownSec">10</span> detik</p>
+      <div class="review-buttons">
+        <button class="btn-review retake" onclick="retakePhoto()">🔄 Retake</button>
+        <button class="btn-review continue" onclick="continuePhoto()">✅ Lanjut</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom JS -->
+  <script src="js/main.js"></script>
+
 </body>
 </html>
