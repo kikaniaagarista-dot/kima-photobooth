@@ -15,42 +15,53 @@ let audioCtx = null;
 const bgMusic = document.getElementById('bgMusic');
 const sfxShutter = document.getElementById('sfxShutter');
 const musicBtn = document.getElementById('musicBtn');
-let musicPlaying = false;
-let musicVolume = 0.3; // Volume musik (0.0 - 1.0)
+let isMusicPlaying = false;
 
 if (bgMusic) {
-  bgMusic.volume = musicVolume;
+  bgMusic.volume = 0.3;
 }
 
-// Toggle background music
-if (musicBtn) {
-  musicBtn.addEventListener('click', () => {
-    // Initialize audio context on first user interaction
+if (musicBtn && bgMusic) {
+  musicBtn.addEventListener('click', async () => {
+    // Initialize audio context
     initAudio();
     
-    if (!bgMusic) {
-      alert('File musik tidak ditemukan! Pastikan ada di assets/music/background.mp3');
-      return;
-    }
-    
-    musicPlaying = !musicPlaying;
-    
-    if (musicPlaying) {
-      bgMusic.play().then(() => {
+    try {
+      if (isMusicPlaying) {
+        // PAUSE music
+        bgMusic.pause();
+        isMusicPlaying = false;
+        musicBtn.textContent = '🔇 Musik: OFF';
+        musicBtn.classList.remove('btn-primary');
+        statusText.textContent = '🔇 Musik dimatikan';
+      } else {
+        // PLAY music
+        await bgMusic.play();
+        isMusicPlaying = true;
         musicBtn.textContent = '🎵 Musik: ON';
         musicBtn.classList.add('btn-primary');
         statusText.textContent = '🎵 Musik latar dinyalakan';
-      }).catch(err => {
-        console.error('Error playing music:', err);
-        musicPlaying = false;
-        musicBtn.textContent = '🔇 Musik: OFF';
-        alert('Klik area mana saja di halaman, lalu coba klik tombol musik lagi');
-      });
-    } else {
-      bgMusic.pause();
+      }
+    } catch (err) {
+      console.error('Music error:', err);
+      isMusicPlaying = false;
       musicBtn.textContent = '🔇 Musik: OFF';
       musicBtn.classList.remove('btn-primary');
-      statusText.textContent = '🔇 Musik dimatikan';
+    }
+  });
+  
+  // Update button state when music ends or errors
+  bgMusic.addEventListener('ended', () => {
+    isMusicPlaying = false;
+    musicBtn.textContent = '🔇 Musik: OFF';
+    musicBtn.classList.remove('btn-primary');
+  });
+  
+  bgMusic.addEventListener('pause', () => {
+    if (isMusicPlaying) {
+      isMusicPlaying = false;
+      musicBtn.textContent = '🔇 Musik: OFF';
+      musicBtn.classList.remove('btn-primary');
     }
   });
 }
@@ -110,17 +121,12 @@ if (removeFrameBtn) {
   });
 }
 
-// ===== AUDIO SYSTEM =====
 function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
   if (audioCtx.state === 'suspended') {
-    audioCtx.resume().then(() => {
-      console.log('Audio context resumed');
-    }).catch(err => {
-      console.error('Error resuming audio:', err);
-    });
+    audioCtx.resume();
   }
 }
 
@@ -251,48 +257,45 @@ function capturePhoto() {
 }
 
 function takeSnapshot() {
-  playShutterSound();
+  playSound('shutter');
   
-  // Flash effect
   flashEl.classList.remove('active');
   void flashEl.offsetWidth;
   flashEl.classList.add('active');
 
-  // Canvas setup
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-  // Background
+  // 1. Background
   if (currentBackgroundColor !== 'transparent') {
     ctx.fillStyle = currentBackgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  // Mirror
+  // 2. VIDEO SAJA yang di-mirror
+  ctx.save(); // Simpan state canvas
   if (isMirrored) {
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
   }
-
-  // Apply filter & draw video
   const filter = filterSelect.value;
   ctx.filter = filter === 'none' ? 'none' : filter;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.restore(); // Kembalikan ke normal sebelum gambar frame
 
-  // Draw stickers
+  // 3. Sticker
   ctx.filter = 'none';
   stickers.forEach(sticker => {
     ctx.font = `${sticker.size}px Arial`;
     ctx.fillText(sticker.emoji, sticker.x, sticker.y);
   });
 
-  // Draw frame (if any)
+  // 4. FRAME TETAP NORMAL (tidak ikut mirror)
   if (currentFrame) {
     ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
   }
 
-  // Save & add to gallery
   const dataUrl = canvas.toDataURL('image/png');
   addPhotoToGallery(dataUrl, false);
   playSound('success');
@@ -333,36 +336,37 @@ function startCollage() {
       void flashEl.offsetWidth;
       flashEl.classList.add('active');
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      
-      if (currentBackgroundColor !== 'transparent') {
-        ctx.fillStyle = currentBackgroundColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      
-      if (isMirrored) {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-      
-      const filter = filterSelect.value;
-      ctx.filter = filter === 'none' ? 'none' : filter;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      ctx.filter = 'none';
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        
+        if (currentBackgroundColor !== 'transparent') {
+          ctx.fillStyle = currentBackgroundColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // VIDEO SAJA yang di-mirror
+        ctx.save();
+        if (isMirrored) {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        }
+        const filter = filterSelect.value;
+        ctx.filter = filter === 'none' ? 'none' : filter;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.restore(); // Frame tidak ikut mirror
 
-      stickers.forEach(sticker => {
-        ctx.font = `${sticker.size}px Arial`;
-        ctx.fillText(sticker.emoji, sticker.x, sticker.y);
-      });
-      
-      if (currentFrame) {
-        ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
-      }
-      
-      photos.push(canvas.toDataURL('image/png'));
-      current++;
+        ctx.filter = 'none';
+        stickers.forEach(sticker => {
+          ctx.font = `${sticker.size}px Arial`;
+          ctx.fillText(sticker.emoji, sticker.x, sticker.y);
+        });
+        
+        if (currentFrame) {
+          ctx.drawImage(currentFrame, 0, 0, canvas.width, canvas.height);
+        }
+        
+        photos.push(canvas.toDataURL('image/png'));
 
       const progress = (current / totalPhotos) * 100;
       progressBar.style.width = progress + '%';
@@ -659,15 +663,4 @@ window.addEventListener('DOMContentLoaded', () => {
   applyLiveFilter();
   statusText.textContent = '🎉 Selamat datang! Tekan SPASI untuk jepret';
 
-// Debug: Check if music file exists
-if (bgMusic) {
-  bgMusic.addEventListener('error', (e) => {
-    console.error('Music file error:', e);
-    alert('File musik tidak bisa dimuat! Cek console (F12) untuk detail error.');
-  });
-  
-  bgMusic.addEventListener('canplaythrough', () => {
-    console.log('✅ Musik siap diputar!');
-  });
-}
 });
