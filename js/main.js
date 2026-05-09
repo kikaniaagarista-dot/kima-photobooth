@@ -11,6 +11,50 @@ let frameImage = null;
 let soundEnabled = true;
 let audioCtx = null;
 
+// ===== MUSIC CONTROL =====
+const bgMusic = document.getElementById('bgMusic');
+const sfxShutter = document.getElementById('sfxShutter');
+const musicBtn = document.getElementById('musicBtn');
+let musicPlaying = false;
+let musicVolume = 0.3; // Volume musik (0.0 - 1.0)
+
+if (bgMusic) {
+  bgMusic.volume = musicVolume;
+}
+
+// Toggle background music
+if (musicBtn) {
+  musicBtn.addEventListener('click', () => {
+    // Initialize audio context on first user interaction
+    initAudio();
+    
+    if (!bgMusic) {
+      alert('File musik tidak ditemukan! Pastikan ada di assets/music/background.mp3');
+      return;
+    }
+    
+    musicPlaying = !musicPlaying;
+    
+    if (musicPlaying) {
+      bgMusic.play().then(() => {
+        musicBtn.textContent = '🎵 Musik: ON';
+        musicBtn.classList.add('btn-primary');
+        statusText.textContent = '🎵 Musik latar dinyalakan';
+      }).catch(err => {
+        console.error('Error playing music:', err);
+        musicPlaying = false;
+        musicBtn.textContent = '🔇 Musik: OFF';
+        alert('Klik area mana saja di halaman, lalu coba klik tombol musik lagi');
+      });
+    } else {
+      bgMusic.pause();
+      musicBtn.textContent = '🔇 Musik: OFF';
+      musicBtn.classList.remove('btn-primary');
+      statusText.textContent = '🔇 Musik dimatikan';
+    }
+  });
+}
+
 // ===== DOM ELEMENTS =====
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
@@ -71,7 +115,13 @@ function initAudio() {
   if (!audioCtx) {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => {
+      console.log('Audio context resumed');
+    }).catch(err => {
+      console.error('Error resuming audio:', err);
+    });
+  }
 }
 
 const sounds = {
@@ -145,6 +195,19 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+// Fungsi untuk play shutter sound effect
+function playShutterSound() {
+  if (sfxShutter && soundEnabled) {
+    sfxShutter.currentTime = 0;
+    sfxShutter.play().catch(() => {
+      // Fallback ke oscillator jika file tidak ada
+      playSound('shutter');
+    });
+  } else {
+    playSound('shutter');
+  }
+}
+
 // ===== CAMERA =====
 async function startCamera() {
   try {
@@ -188,7 +251,7 @@ function capturePhoto() {
 }
 
 function takeSnapshot() {
-  playSound('shutter');
+  playShutterSound();
   
   // Flash effect
   flashEl.classList.remove('active');
@@ -595,4 +658,16 @@ window.addEventListener('DOMContentLoaded', () => {
   startCamera();
   applyLiveFilter();
   statusText.textContent = '🎉 Selamat datang! Tekan SPASI untuk jepret';
+
+// Debug: Check if music file exists
+if (bgMusic) {
+  bgMusic.addEventListener('error', (e) => {
+    console.error('Music file error:', e);
+    alert('File musik tidak bisa dimuat! Cek console (F12) untuk detail error.');
+  });
+  
+  bgMusic.addEventListener('canplaythrough', () => {
+    console.log('✅ Musik siap diputar!');
+  });
+}
 });

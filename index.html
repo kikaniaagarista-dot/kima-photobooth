@@ -190,14 +190,14 @@
           </div>
         </div>
 
-        <!-- Settings Panel -->
-        <div id="settings" class="control-panel">
-          <div class="control-row">
-            <button id="mirrorBtn" class="btn btn-secondary">🪞 Mirror</button>
-            <button id="soundToggle" class="btn btn-secondary">🔊 Sound: ON</button>
-            <button id="printBtn" class="btn btn-primary">🖨️ Print</button>
-            <button id="clearBtn" class="btn btn-danger">🗑️ Hapus Semua</button>
-          </div>
+      <!-- Settings Panel -->
+      <div id="settings" class="control-panel">
+        <div class="control-row">
+          <button id="mirrorBtn" class="btn btn-secondary">🪞 Mirror</button>
+          <button id="musicBtn" class="btn btn-secondary">🔇 Musik: OFF</button>
+          <button id="soundToggle" class="btn btn-secondary">🔊 SFX: ON</button>
+          <button id="printBtn" class="btn btn-primary">🖨️ Print</button>
+          <button id="clearBtn" class="btn btn-danger">🗑️ Hapus Semua</button>
         </div>
       </div>
 
@@ -228,5 +228,13 @@
 
   <!-- Custom JS -->
   <script src="js/main.js"></script>
+    <!-- Audio Elements -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="assets/music/background.mp3" type="audio/mpeg">
+  </audio>
+  
+  <audio id="sfxShutter" preload="auto">
+    <source src="assets/music/shutter.mp3" type="audio/mpeg">
+  </audio>
 </body>
 </html>
