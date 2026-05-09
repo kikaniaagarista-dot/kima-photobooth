@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ Kima Photo Booth Pro ✨</title>
+  
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Floating Decorations -->
+  <div class="floating-decor">✨</div>
+  <div class="floating-decor">📸</div>
+  <div class="floating-decor">💫</div>
+  <div class="floating-decor">🎀</div>
+  <div class="floating-decor">⭐</div>
+
+  <!-- Fullscreen Button -->
+  <button class="fullscreen-btn" id="fullscreenBtn" title="Fullscreen">⛶</button>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1 class="header-title">Kima Photo Booth</h1>
+      <p class="header-subtitle">✨ Tangkap Momen Berhargamu ✨</p>
+      <div class="header-divider">
+        <div class="line"></div>
+        <span>✦</span>
+        <div class="line"></div>
+      </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="booth-card">
+      <!-- Video Section -->
+      <div class="video-section">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+        <div id="countdown" class="countdown-overlay">
+          <div class="countdown-number" id="countdownNumber">3</div>
+          <div class="countdown-text">Bersiap ya... 📸</div>
+        </div>
+        <div id="flash" class="flash"></div>
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-section">
+        <!-- Tabs -->
+        <div class="control-tabs">
+          <button class="tab-btn active" data-tab="layout">📐 Layout</button>
+          <button class="tab-btn" data-tab="filter">🎨 Filter</button>
+          <button class="tab-btn" data-tab="background">🌈 Background</button>
+          <button class="tab-btn" data-tab="frame">🖼️ Frame</button> 
+          <button class="tab-btn" data-tab="sticker">🎭 Sticker</button>
+          <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+        </div>
+
+        <!-- Layout Panel -->
+        <div id="layout" class="control-panel active">
+          <div class="control-row">
+            <div class="control-group">
+              <label>📐 Layout</label>
+              <select id="layoutSelect">
+                <option value="1">1 Foto (Full)</option>
+                <option value="2">2 Foto (Strip)</option>
+                <option value="4">4 Foto (Strip)</option>
+                <option value="2x2">2×2 Grid</option>
+                <option value="2x3" selected>2×3 Grid</option>
+                <option value="3x2">3×2 Grid</option>
+              </select>
+            </div>
+            <div class="control-group">
+              <label>⏱ Timer</label>
+              <select id="timer">
+                <option value="0">⚡ Langsung</option>
+                <option value="3" selected>3 Detik</option>
+                <option value="5">5 Detik</option>
+                <option value="10">10 Detik</option>
+              </select>
+            </div>
+          </div>
+          <div class="control-row">
+            <button id="captureBtn" class="btn btn-capture">📷 Jepret!</button>
+            <button id="collageBtn" class="btn btn-collage">🎞️ Kolase Otomatis</button>
+          </div>
+        </div>
+
+        <!-- Filter Panel -->
+        <div id="filter" class="control-panel">
+          <div class="control-row">
+            <div class="control-group">
+              <label>🎨 Filter</label>
+              <select id="filterSelect">
+                <option value="none">✨ Normal</option>
+                <option value="grayscale(100%)">⬛ Grayscale</option>
+                <option value="sepia(100%)">🟤 Sepia</option>
+                <option value="saturate(200%)">🌈 Saturate</option>
+                <option value="hue-rotate(90deg)">💚 Hue Green</option>
+                <option value="hue-rotate(180deg)">💙 Hue Blue</option>
+                <option value="hue-rotate(270deg)">💜 Hue Purple</option>
+                <option value="brightness(130%)">☀️ Bright</option>
+                <option value="brightness(70%)">🌑 Dark</option>
+                <option value="contrast(150%)">🔆 High Contrast</option>
+                <option value="contrast(50%)">🔅 Low Contrast</option>
+                <option value="blur(2px)">🌫️ Blur</option>
+                <option value="invert(100%)">🔄 Invert</option>
+                <option value="grayscale(100%) contrast(120%) brightness(110%)">🎬 Vintage</option>
+                <option value="saturate(0%) brightness(120%) contrast(90%)">☁️ Soft</option>
+                <option value="sepia(30%) saturate(140%) brightness(110%) contrast(110%)">🍂 Warm</option>
+                <option value="hue-rotate(340deg) saturate(150%) brightness(110%)">🌸 Pink Dream</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Background Panel -->
+        <div id="background" class="control-panel">
+          <div class="control-row">
+            <div class="control-group">
+              <label> Background</label>
+              <div class="color-picker-wrapper" id="bgColorPicker">
+                <div class="color-option active" data-color="transparent" style="background: linear-gradient(45deg, #000 25%, transparent 25%), linear-gradient(-45deg, #000 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #000 75%), linear-gradient(-45deg, transparent 75%, #000 75%); background-size: 10px 10px; background-position: 0 0, 0 5px, 5px -5px, -5px 0px;"></div>
+                <div class="color-option" data-color="#800020" style="background: #800020;"></div>
+                <div class="color-option" data-color="#ff0000" style="background: #ff0000;"></div>
+                <div class="color-option" data-color="#0000ff" style="background: #0000ff;"></div>
+                <div class="color-option" data-color="#00ff00" style="background: #00ff00;"></div>
+                <div class="color-option" data-color="#ffd700" style="background: #ffd700;"></div>
+                <div class="color-option" data-color="#ff69b4" style="background: #ff69b4;"></div>
+                <div class="color-option" data-color="#000000" style="background: #000000;"></div>
+                <div class="color-option" data-color="#ffffff" style="background: #ffffff;"></div>
+                <div class="color-option" data-color="#ff6b6b" style="background: #ff6b6b;"></div>
+                <div class="color-option" data-color="#4ecdc4" style="background: #4ecdc4;"></div>
+                <div class="color-option" data-color="#ffe66d" style="background: #ffe66d;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Frame Panel -->
+        <div id="frame" class="control-panel">
+          <div class="control-row">
+            <div class="control-group" style="width: 100%;">
+              <label>🖼️ Upload Frame PNG</label>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px;">
+                <label class="btn btn-primary" style="cursor: pointer;">
+                  📤 Upload Frame
+                  <input type="file" id="frameUpload" accept="image/png" style="display: none;">
+                </label>
+                <button id="removeFrameBtn" class="btn btn-danger">🗑️ Hapus Frame</button>
+              </div>
+              <p style="text-align: center; color: var(--gold); font-size: 0.75rem; margin-top: 8px;">
+                ✨ Gunakan PNG transparan dari Canva<br>
+                Frame akan otomatis menempel di hasil foto
+              </p>
+            </div>
+          </div>
+          <div id="framePreview" style="display: none; text-align: center; margin-top: 10px;">
+            <p style="color: var(--gold); font-size: 0.85rem; margin-bottom: 8px;">✅ Frame aktif!</p>
+            <img id="framePreviewImg" src="" alt="Frame Preview" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 2px solid var(--gold);">
+          </div>
+        </div>
+
+        <!-- Sticker Panel -->
+        <div id="sticker" class="control-panel">
+          <div class="control-row">
+            <div class="control-group" style="width: 100%;">
+              <label>🎭 Pilih Sticker (Klik untuk tambah)</label>
+              <div class="stickers-grid" id="stickersGrid">
+                <div class="sticker-item">❤️</div><div class="sticker-item">💖</div><div class="sticker-item">💕</div>
+                <div class="sticker-item">💗</div><div class="sticker-item">💝</div><div class="sticker-item">💘</div>
+                <div class="sticker-item">⭐</div><div class="sticker-item">🌟</div><div class="sticker-item">✨</div>
+                <div class="sticker-item">💫</div><div class="sticker-item">🎀</div><div class="sticker-item">🎈</div>
+                <div class="sticker-item">🎉</div><div class="sticker-item">🎊</div><div class="sticker-item">🌸</div>
+                <div class="sticker-item">🌺</div><div class="sticker-item">🌻</div><div class="sticker-item">🌹</div>
+                <div class="sticker-item">😊</div><div class="sticker-item">😍</div><div class="sticker-item">🥰</div>
+                <div class="sticker-item">😎</div><div class="sticker-item">🤩</div><div class="sticker-item">😘</div>
+                <div class="sticker-item">👑</div><div class="sticker-item">💎</div><div class="sticker-item">🔥</div>
+                <div class="sticker-item">🦋</div><div class="sticker-item">🌈</div><div class="sticker-item">🎵</div>
+              </div>
+            </div>
+          </div>
+          <div class="control-row">
+            <button id="clearStickersBtn" class="btn btn-danger">🗑️ Hapus Semua Sticker</button>
+          </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings" class="control-panel">
+          <div class="control-row">
+            <button id="mirrorBtn" class="btn btn-secondary">🪞 Mirror</button>
+            <button id="soundToggle" class="btn btn-secondary">🔊 Sound: ON</button>
+            <button id="printBtn" class="btn btn-primary">🖨️ Print</button>
+            <button id="clearBtn" class="btn btn-danger">🗑️ Hapus Semua</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="status-bar">
+        <p class="status-text" id="statusText">Siap! Pilih layout dan jepret ✨</p>
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <!-- Gallery -->
+    <div class="gallery-section">
+      <div class="gallery-header">
+        <h2 class="gallery-title">📸 Hasil Foto</h2>
+        <span class="gallery-count" id="galleryCount">0 foto</span>
+      </div>
+      <div class="gallery" id="gallery">
+        <div class="empty-gallery" id="emptyGallery">
+          <div class="icon">📷</div>
+          <p>Belum ada foto. Mulai jepret sekarang!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print Area -->
+  <div id="printArea"></div>
+
+  <!-- Custom JS -->
+  <script src="js/main.js"></script>
+</body>
+</html>

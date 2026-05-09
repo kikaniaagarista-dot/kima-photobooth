@@ -1,0 +1,52 @@
+✨ KIMA PHOTO BOOTH PRO ✨
+==========================
+
+📁 STRUKTUR FOLDER:
+├── index.html      ← Buka file ini di browser / Live Server
+├── css/
+│   └── style.css   ← Semua styling
+├── js/
+│   └── main.js     ← Semua logika JavaScript
+└── assets/         ← (Opsional) untuk musik & frame
+
+🚀 CARA MENJALANKAN:
+1. Pastikan semua file berada dalam satu folder "kima-photobooth"
+2. Buka file index.html dengan:
+   - VS Code + ekstensi "Live Server" (RECOMMENDED)
+   - Atau double click (beberapa browser mungkin blokir kamera)
+3. Izinkan akses kamera saat diminta
+4. Siap dipakai! 📸
+
+🎨 FITUR:
+✅ Kamera real-time + timer countdown
+✅ 17 Filter (Vintage, Sepia, Pink Dream, dll)
+✅ 6 Layout Kolase (1, 2, 4, 2x2, 2x3, 3x2)
+✅ Upload Frame PNG transparan dari Canva
+✅ Sticker emoji (klik untuk tambah)
+✅ Background color picker
+✅ Mirror, Sound ON/OFF, Print, Hapus
+✅ Flash effect + progress bar
+✅ Responsive (HP/Desktop)
+✅ Keyboard shortcut: SPASI = Jepret, Ctrl+C = Kolase
+
+🖼️ CARA PAKAI FRAME DARI CANVA:
+1. Buat desain di Canva dengan background TRANSPARAN
+2. Download sebagai PNG (centang "Transparent background")
+3. Di web: Tab "🖼️ Frame" → Upload → Pilih file PNG
+4. Frame akan otomatis menempel di hasil foto!
+
+🔗 HOSTING ONLINE (GRATIS):
+1. Upload folder ke Netlify Drop: https://app.netlify.com/drop
+2. Atau ke GitHub Pages
+3. Link akan jadi: https://namakamu.netlify.app
+   (Kamera hanya jalan di HTTPS/localhost)
+
+⚠️ CATATAN:
+- Browser memblokir autoplay audio → klik tombol "🔊 Sound" pertama kali
+- Frame harus PNG transparan agar foto terlihat
+- Untuk hasil terbaik, gunakan Chrome/Edge
+
+🛠️ BUTUH BANTUAN?
+Hubungi developer atau buka Console (F12) untuk cek error.
+
+✨ Selamat berfoto! ✨
