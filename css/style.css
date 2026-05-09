@@ -654,3 +654,129 @@ select option {
 .sticker-controls button:hover {
   background: rgba(255,255,255,0.4);
 }
+
+/* ===== REVIEW OVERLAY ===== */
+.review-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.review-container {
+  background: linear-gradient(145deg, rgba(128, 0, 32, 0.9), rgba(90, 0, 22, 0.95));
+  border-radius: 20px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  border: 3px solid var(--gold);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.review-title {
+  font-family: 'Pacifico', cursive;
+  color: var(--gold);
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.review-image-wrap {
+  width: 100%;
+  aspect-ratio: 4/3;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid var(--gold);
+  margin-bottom: 20px;
+  background: #000;
+}
+
+.review-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-timer {
+  width: 100%;
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.timer-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  width: 100%;
+  transform-origin: left;
+  animation: shrinkBar 10s linear;
+}
+
+@keyframes shrinkBar {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.review-text {
+  color: var(--white);
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.review-text #countdownSec {
+  color: var(--gold);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.review-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.btn-review {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Poppins', sans-serif;
+}
+
+.btn-review.retake {
+  background: linear-gradient(135deg, #ff4d4d, #800020);
+  color: white;
+}
+
+.btn-review.retake:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 77, 77, 0.5);
+}
+
+.btn-review.continue {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--maroon-dark);
+}
+
+.btn-review.continue:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(212, 168, 67, 0.5);
+}
+
+@media (max-width: 600px) {
+  .review-buttons {
+    flex-direction: column;
+  }
+  .btn-review {
+    width: 100%;
+  }
+}

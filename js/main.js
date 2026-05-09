@@ -10,6 +10,12 @@ let currentFrame = null;
 let frameImage = null;
 let soundEnabled = true;
 let audioCtx = null;
+let reviewTimeout = null;
+let reviewCountdownInterval = null;
+let currentReviewPhoto = null;
+let currentPhotoIndex = 0;
+let collagePhotos = [];
+let isReviewing = false;
 
 // ===== MUSIC CONTROL =====
 const bgMusic = document.getElementById('bgMusic');
@@ -314,94 +320,316 @@ async function startCollage() {
 
   isProcessing = true;
   updateButtons(true);
+  collagePhotos = [];
+  currentPhotoIndex = 0;
 
   const layout = layoutSelect.value;
-  const photos = [];
   const timerValue = parseInt(timerSelect.value) || 3;
   const totalPhotos = getPhotoCountForLayout(layout);
 
   try {
-    // Loop mengambil foto satu per satu (Anti Foto Kembar)
-    for (let i = 0; i < totalPhotos; i++) {
-      if (!isProcessing) break; // Stop jika dibatalkan
-
-      // Countdown
-      if (timerValue > 0) {
-        await new Promise((resolve) => {
-          startCountdown(timerValue, resolve);
-        });
-      }
-
-      // Capture
-      playSound('shutter');
-      flashEl.classList.remove('active');
-      void flashEl.offsetWidth;
-      flashEl.classList.add('active');
-
-      // Buat canvas sementara untuk capture
-      const captureCanvas = document.createElement('canvas');
-      captureCanvas.width = video.videoWidth;
-      captureCanvas.height = video.videoHeight;
-      const cctx = captureCanvas.getContext('2d');
-
-      // Background
-      if (currentBackgroundColor !== 'transparent') {
-        cctx.fillStyle = currentBackgroundColor;
-        cctx.fillRect(0, 0, captureCanvas.width, captureCanvas.height);
-      }
-
-      // Mirror & Filter
-      cctx.save();
-      if (isMirrored) {
-        cctx.translate(captureCanvas.width, 0);
-        cctx.scale(-1, 1);
-      }
-      const filter = filterSelect.value;
-      cctx.filter = filter === 'none' ? 'none' : filter;
-      cctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
-      cctx.restore();
-
-      // Sticker & Frame
-      cctx.filter = 'none';
-      stickers.forEach(sticker => {
-        cctx.font = `${sticker.size}px Arial`;
-        cctx.fillText(sticker.emoji, sticker.x, sticker.y);
-      });
-
-      if (currentFrame) {
-        cctx.drawImage(currentFrame, 0, 0, captureCanvas.width, captureCanvas.height);
-      }
-
-      // Simpan hasil capture
-      photos.push(captureCanvas.toDataURL('image/png'));
-
-      // Update Progress
-      const progress = ((i + 1) / totalPhotos) * 100;
-      progressBar.style.width = progress + '%';
-      statusText.textContent = `📸 Foto ${i + 1}/${totalPhotos} selesai!`;
-
-      // Jeda antar foto
-      if (i < totalPhotos - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
-
-    // Buat Kolase setelah semua foto terkumpul
-    if (photos.length > 0 && isProcessing) {
-      buildCollage(photos, layout);
-      playSound('success');
-      statusText.textContent = `✅ Kolase ${photos.length} foto selesai! 🎞️`;
-    }
-
+    await takeCollagePhoto(timerValue, totalPhotos);
   } catch (err) {
     console.error('Collage error:', err);
     statusText.textContent = '❌ Error saat kolase';
-  } finally {
     isProcessing = false;
     updateButtons(false);
     progressBar.style.width = '0%';
   }
+}
+
+async function takeCollagePhoto(timerValue, totalPhotos) {
+  if (!isProcessing || isReviewing) return;
+
+  // Countdown before capture
+  if (timerValue > 0) {
+    await new Promise((resolve) => {
+      startCountdown(timerValue, resolve);
+    });
+  }
+
+  // Capture
+  playSound('shutter');
+  flashEl.classList.remove('active');
+  void flashEl.offsetWidth;
+  flashEl.classList.add('active');
+
+  const captureCanvas = document.createElement('canvas');
+  captureCanvas.width = video.videoWidth;
+  captureCanvas.height = video.videoHeight;
+  const cctx = captureCanvas.getContext('2d');
+
+  if (currentBackgroundColor !== 'transparent') {
+    cctx.fillStyle = currentBackgroundColor;
+    cctx.fillRect(0, 0, captureCanvas.width, captureCanvas.height);
+  }
+
+  cctx.save();
+  if (isMirrored) {
+    cctx.translate(captureCanvas.width, 0);
+    cctx.scale(-1, 1);
+  }
+  const filter = filterSelect.value;
+  cctx.filter = filter === 'none' ? 'none' : filter;
+  cctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+  cctx.restore();
+
+  cctx.filter = 'none';
+  stickers.forEach(sticker => {
+    cctx.font = `${sticker.size}px Arial`;
+    cctx.fillText(sticker.emoji, sticker.x, sticker.y);
+  });
   
+  if (currentFrame) {
+    cctx.drawImage(currentFrame, 0, 0, captureCanvas.width, captureCanvas.height);
+  }
+
+  const dataUrl = captureCanvas.toDataURL('image/png');
+  currentReviewPhoto = dataUrl;
+
+  // Show review
+  isReviewing = true;
+  showReviewOverlay(dataUrl, totalPhotos);
+}
+
+function showReviewOverlay(photoDataUrl, totalPhotos) {
+  const overlay = document.getElementById('reviewOverlay');
+  const reviewImg = document.getElementById('reviewImage');
+  const countdownSec = document.getElementById('countdownSec');
+  const timerBar = document.getElementById('timerBar');
+
+  reviewImg.src = photoDataUrl;
+  overlay.style.display = 'flex';
+  
+  // Reset timer bar animation
+  timerBar.style.animation = 'none';
+  void timerBar.offsetWidth; // Trigger reflow
+  timerBar.style.animation = 'shrinkBar 10s linear';
+
+  // Countdown display
+  let seconds = 10;
+  countdownSec.textContent = seconds;
+  
+  if (reviewCountdownInterval) clearInterval(reviewCountdownInterval);
+  reviewCountdownInterval = setInterval(() => {
+    seconds--;
+    countdownSec.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(reviewCountdownInterval);
+    }
+  }, 1000);
+
+  // Auto continue after 10 seconds
+  if (reviewTimeout) clearTimeout(reviewTimeout);
+  reviewTimeout = setTimeout(() => {
+    continuePhoto();
+  }, 10000);
+}
+
+function retakePhoto() {
+  // Clear timers
+  if (reviewTimeout) clearTimeout(reviewTimeout);
+  if (reviewCountdownInterval) clearInterval(reviewCountdownInterval);
+  
+  // Hide overlay
+  document.getElementById('reviewOverlay').style.display = 'none';
+  isReviewing = false;
+  
+  statusText.textContent = '📸 Retake foto...';
+  
+  // Retake immediately (no countdown)
+  setTimeout(() => {
+    const timerValue = parseInt(timerSelect.value) || 0;
+    const totalPhotos = getPhotoCountForLayout(layoutSelect.value);
+    takeCollagePhoto(timerValue, totalPhotos);
+  }, 500);
+}
+
+function continuePhoto() {
+  // Clear timers
+  if (reviewTimeout) clearTimeout(reviewTimeout);
+  if (reviewCountdownInterval) clearInterval(reviewCountdownInterval);
+  
+  // Hide overlay
+  document.getElementById('reviewOverlay').style.display = 'none';
+  
+  // Save photo
+  collagePhotos.push(currentReviewPhoto);
+  isReviewing = false;
+  
+  currentPhotoIndex++;
+  const totalPhotos = getPhotoCountForLayout(layoutSelect.value);
+  
+  // Update progress
+  const progress = (currentPhotoIndex / totalPhotos) * 100;
+  progressBar.style.width = progress + '%';
+  statusText.textContent = `📸 Foto ${currentPhotoIndex}/${totalPhotos} disimpan!`;
+
+  // Check if done or continue
+  if (currentPhotoIndex >= totalPhotos) {
+    // All photos done
+    setTimeout(() => {
+      buildCollage(collagePhotos, layoutSelect.value);
+      playSound('success');
+      statusText.textContent = `✅ Kolase ${totalPhotos} foto selesai! 🎞️`;
+      isProcessing = false;
+      updateButtons(false);
+      progressBar.style.width = '0%';
+    }, 500);
+  } else {
+    // Next photo
+    setTimeout(() => {
+      const timerValue = parseInt(timerSelect.value) || 3;
+      takeCollagePhoto(timerValue, totalPhotos);
+    }, 500);
+  }
+}
+
+async function takeCollagePhoto(timerValue, totalPhotos) {
+  if (!isProcessing || isReviewing) return;
+
+  // Countdown before capture
+  if (timerValue > 0) {
+    await new Promise((resolve) => {
+      startCountdown(timerValue, resolve);
+    });
+  }
+
+  // Capture
+  playSound('shutter');
+  flashEl.classList.remove('active');
+  void flashEl.offsetWidth;
+  flashEl.classList.add('active');
+
+  const captureCanvas = document.createElement('canvas');
+  captureCanvas.width = video.videoWidth;
+  captureCanvas.height = video.videoHeight;
+  const cctx = captureCanvas.getContext('2d');
+
+  if (currentBackgroundColor !== 'transparent') {
+    cctx.fillStyle = currentBackgroundColor;
+    cctx.fillRect(0, 0, captureCanvas.width, captureCanvas.height);
+  }
+
+  cctx.save();
+  if (isMirrored) {
+    cctx.translate(captureCanvas.width, 0);
+    cctx.scale(-1, 1);
+  }
+  const filter = filterSelect.value;
+  cctx.filter = filter === 'none' ? 'none' : filter;
+  cctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+  cctx.restore();
+
+  cctx.filter = 'none';
+  stickers.forEach(sticker => {
+    cctx.font = `${sticker.size}px Arial`;
+    cctx.fillText(sticker.emoji, sticker.x, sticker.y);
+  });
+  
+  if (currentFrame) {
+    cctx.drawImage(currentFrame, 0, 0, captureCanvas.width, captureCanvas.height);
+  }
+
+  const dataUrl = captureCanvas.toDataURL('image/png');
+  currentReviewPhoto = dataUrl;
+
+  // Show review
+  isReviewing = true;
+  showReviewOverlay(dataUrl, totalPhotos);
+}
+
+function showReviewOverlay(photoDataUrl, totalPhotos) {
+  const overlay = document.getElementById('reviewOverlay');
+  const reviewImg = document.getElementById('reviewImage');
+  const countdownSec = document.getElementById('countdownSec');
+  const timerBar = document.getElementById('timerBar');
+
+  reviewImg.src = photoDataUrl;
+  overlay.style.display = 'flex';
+  
+  // Reset timer bar animation
+  timerBar.style.animation = 'none';
+  void timerBar.offsetWidth; // Trigger reflow
+  timerBar.style.animation = 'shrinkBar 10s linear';
+
+  // Countdown display
+  let seconds = 10;
+  countdownSec.textContent = seconds;
+  
+  if (reviewCountdownInterval) clearInterval(reviewCountdownInterval);
+  reviewCountdownInterval = setInterval(() => {
+    seconds--;
+    countdownSec.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(reviewCountdownInterval);
+    }
+  }, 1000);
+
+  // Auto continue after 10 seconds
+  if (reviewTimeout) clearTimeout(reviewTimeout);
+  reviewTimeout = setTimeout(() => {
+    continuePhoto();
+  }, 10000);
+}
+
+function retakePhoto() {
+  // Clear timers
+  if (reviewTimeout) clearTimeout(reviewTimeout);
+  if (reviewCountdownInterval) clearInterval(reviewCountdownInterval);
+  
+  // Hide overlay
+  document.getElementById('reviewOverlay').style.display = 'none';
+  isReviewing = false;
+  
+  statusText.textContent = '📸 Retake foto...';
+  
+  // Retake immediately (no countdown)
+  setTimeout(() => {
+    const timerValue = parseInt(timerSelect.value) || 0;
+    const totalPhotos = getPhotoCountForLayout(layoutSelect.value);
+    takeCollagePhoto(timerValue, totalPhotos);
+  }, 500);
+}
+
+function continuePhoto() {
+  // Clear timers
+  if (reviewTimeout) clearTimeout(reviewTimeout);
+  if (reviewCountdownInterval) clearInterval(reviewCountdownInterval);
+  
+  // Hide overlay
+  document.getElementById('reviewOverlay').style.display = 'none';
+  
+  // Save photo
+  collagePhotos.push(currentReviewPhoto);
+  isReviewing = false;
+  
+  currentPhotoIndex++;
+  const totalPhotos = getPhotoCountForLayout(layoutSelect.value);
+  
+  // Update progress
+  const progress = (currentPhotoIndex / totalPhotos) * 100;
+  progressBar.style.width = progress + '%';
+  statusText.textContent = `📸 Foto ${currentPhotoIndex}/${totalPhotos} disimpan!`;
+
+  // Check if done or continue
+  if (currentPhotoIndex >= totalPhotos) {
+    // All photos done
+    setTimeout(() => {
+      buildCollage(collagePhotos, layoutSelect.value);
+      playSound('success');
+      statusText.textContent = `✅ Kolase ${totalPhotos} foto selesai! 🎞️`;
+      isProcessing = false;
+      updateButtons(false);
+      progressBar.style.width = '0%';
+    }, 500);
+  } else {
+    // Next photo
+    setTimeout(() => {
+      const timerValue = parseInt(timerSelect.value) || 3;
+      takeCollagePhoto(timerValue, totalPhotos);
+    }, 500);
+  }
 }
 
 

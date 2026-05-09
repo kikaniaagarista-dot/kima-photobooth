@@ -245,5 +245,23 @@
   <audio id="sfxShutter" preload="auto">
     <source src="assets/music/shutter.mp3" type="audio/mpeg">
   </audio>
+  
+    <!-- Review Overlay -->
+  <div id="reviewOverlay" class="review-overlay" style="display: none;">
+    <div class="review-container">
+      <h2 class="review-title">Review Foto</h2>
+      <div class="review-image-wrap">
+        <img id="reviewImage" src="" alt="Review">
+      </div>
+      <div class="review-timer">
+        <div class="timer-bar" id="timerBar"></div>
+      </div>
+      <p class="review-text">Otomatis lanjut dalam <span id="countdownSec">10</span> detik</p>
+      <div class="review-buttons">
+        <button class="btn-review retake" onclick="retakePhoto()">🔄 Retake</button>
+        <button class="btn-review continue" onclick="continuePhoto()">✅ Lanjut</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
